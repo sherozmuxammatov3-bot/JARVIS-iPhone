@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<title>JARVIS AI</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080d18;color:#e8f3ff;
+ font-family:Arial,sans-serif;min-height:100vh;
+ display:flex;justify-content:center;align-items:center;
+}
+.app{width:100%;max-width:480px;padding:25px}
+h1{text-align:center;letter-spacing:8px;color:#48c8ff}
+.status{text-align:center;color:#55d9ad;font-size:13px}
+.circle{
+ width:190px;height:190px;border:2px solid #32baff;
+ border-radius:50%;margin:35px auto;
+ display:flex;align-items:center;justify-content:center;
+ box-shadow:0 0 35px #168cff66;
+ font-size:55px;color:#49caff;
+}
+button,input{
+ border:1px solid #2879a9;border-radius:12px;
+ padding:14px;background:#101e30;color:white;font-size:16px
+}
+button{cursor:pointer}
+.mic{display:block;width:100%;background:#087fba}
+.send{background:#087fba}
+.controls{display:flex;gap:8px;margin-top:15px}
+input{flex:1;min-width:0}
+#answer{
+ margin-top:22px;padding:16px;background:#101e30;
+ border-radius:12px;min-height:75px;line-height:1.5;
+}
+.small{text-align:center;color:#718ba5;font-size:12px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>J.A.R.V.I.S</h1>
+<div class="status" id="status">SYSTEM ONLINE</div>
+<div class="circle">◉</div>
+<button class="mic" onclick="listen()">🎙 GAPIRISH</button>
+<div class="controls">
+<input id="message" placeholder="Buyruq bering...">
+<button class="send" onclick="send()">Yuborish</button>
+</div>
+<div id="answer">Assalomu alaykum! Men JARVIS. Sizni tinglashga tayyorman.</div>
+<div class="small">PERSONAL AI ASSISTANT · VERSION 1.0</div>
+</div>
+<script>
+const answer=document.getElementById("answer");
+const statusText=document.getElementById("status");
+
+function speak(text){
+ if(!("speechSynthesis" in window)) return;
+ speechSynthesis.cancel();
+ let voice=new SpeechSynthesisUtterance(text);
+ voice.lang="uz-UZ";
+ voice.rate=1;
+ speechSynthesis.speak(voice);
+}
+
+function reply(text){
+ answer.textContent=text;
+ speak(text);
+}
+
+function send(){
+ let text=document.getElementById("message").value.trim();
+ if(!text)return;
+ document.getElementById("message").value="";
+ let q=text.toLowerCase();
+ if(q.includes("salom")) reply("Va alaykum assalom! Men JARVIS. Sizga qanday yordam beray?");
+ else if(q.includes("isming")) reply("Mening ismim JARVIS. Shaxsiy sun'iy intellekt yordamchingizman.");
+ else if(q.includes("vaqt")) reply("Telefoningizdagi vaqt: "+new Date().toLocaleTimeString("uz-UZ"));
+ else if(q.includes("sana")) reply("Bugungi sana: "+new Date().toLocaleDateString("uz-UZ"));
+ else if(q.includes("to'xta")||q.includes("stop")){
+ speechSynthesis.cancel();
+ answer.textContent="Ovozli javob to'xtatildi.";
+ }
+ else reply("Buyrug'ingiz qabul qilindi: "+text+". Hozircha men sinov rejimidaman.");
+}
+
+function listen(){
+ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!Recognition){
+ reply("Bu brauzerda ovozni tanish funksiyasi mavjud emas. Matn orqali buyruq bering.");
+ return;
+ }
+ const rec=new Recognition();
+ rec.lang="uz-UZ";
+ rec.interimResults=false;
+ statusText.textContent="TINGLAYAPMAN...";
+ rec.onresult=e=>{
+ document.getElementById("message").value=e.results[0][0].transcript;
+ statusText.textContent="SYSTEM ONLINE";
+ send();
+ };
+ rec.onerror=()=>{
+ statusText.textContent="QAYTA URINIB KO'RING";
+ };
+ rec.onend=()=>{
+ if(statusText.textContent==="TINGLAYAPMAN...")
+ statusText.textContent="SYSTEM ONLINE";
+ };
+ rec.start();
+}
+</script>
+</body>
+</html>

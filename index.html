@@ -52,13 +52,30 @@ try{
 memory=JSON.parse(localStorage.getItem("jarvis_memory")||"[]");
 }catch(e){memory=[];}
 
-function speak(text){
-if(!window.speechSynthesis)return;
-window.speechSynthesis.cancel();
-const u=new SpeechSynthesisUtterance(text);
-u.lang="uz-UZ";
-u.rate=0.9;
-window.speechSynthesis.speak(u);
+function speak(text) {
+    if (!window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+
+    const uzVoice = voices.find(v =>
+        v.lang.toLowerCase().startsWith("uz")
+    );
+
+    if (uzVoice) {
+        u.voice = uzVoice;
+        u.lang = uzVoice.lang;
+    } else {
+        u.lang = "uz-UZ";
+    }
+
+    u.rate = 0.85;
+    u.pitch = 0.95;
+    u.volume = 1;
+
+    window.speechSynthesis.speak(u);
 }
 
 function reply(text){

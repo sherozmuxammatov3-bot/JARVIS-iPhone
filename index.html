@@ -4,63 +4,115 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#080d18">
-<title>JARVIS AI</title>
+<title>JARVIS 2.0</title>
+
 <style>
 *{box-sizing:border-box}
 body{
  margin:0;background:#080d18;color:#e8f3ff;
  font-family:Arial,sans-serif;min-height:100vh;
- display:flex;justify-content:center;align-items:center;
 }
-.app{width:100%;max-width:480px;padding:25px}
+.app{max-width:480px;margin:auto;padding:24px 20px}
 h1{text-align:center;letter-spacing:8px;color:#48c8ff}
 .status{text-align:center;color:#55d9ad;font-size:13px}
-.circle{
+.orb{
  width:190px;height:190px;border:2px solid #32baff;
  border-radius:50%;margin:35px auto;
  display:flex;align-items:center;justify-content:center;
  box-shadow:0 0 35px #168cff66;
- font-size:55px;color:#49caff;
+ color:#49caff;font-size:55px;
+}
+.orb.active{animation:pulse 1.5s infinite}
+@keyframes pulse{
+ 50%{box-shadow:0 0 60px #168cff}
 }
 button,input{
  border:1px solid #2879a9;border-radius:12px;
- padding:14px;background:#101e30;color:white;font-size:16px
+ padding:14px;background:#101e30;color:white;
+ font-size:16px
 }
 button{cursor:pointer}
-.mic{display:block;width:100%;background:#087fba}
-.send{background:#087fba}
-.controls{display:flex;gap:8px;margin-top:15px}
+button:active{opacity:.7}
+.mic{width:100%;background:#087fba}
+.controls{display:flex;gap:8px;margin-top:14px}
 input{flex:1;min-width:0}
+.send{background:#087fba}
 #answer{
- margin-top:22px;padding:16px;background:#101e30;
- border-radius:12px;min-height:75px;line-height:1.5;
+ margin-top:20px;padding:17px;background:#101e30;
+ border-radius:12px;min-height:80px;line-height:1.6;
 }
-.small{text-align:center;color:#718ba5;font-size:12px;margin-top:20px}
+.info{font-size:12px;color:#718ba5;text-align:center;margin-top:20px}
+.memory{
+ margin-top:15px;padding:14px;background:#101e30;
+ border-radius:12px;font-size:13px;color:#9bb5ce;
+}
 </style>
 </head>
+
 <body>
 <div class="app">
+
 <h1>J.A.R.V.I.S</h1>
 <div class="status" id="status">SYSTEM ONLINE</div>
-<div class="circle">◉</div>
-<button class="mic" onclick="listen()">🎙 GAPIRISH</button>
+
+<div class="orb" id="orb">◉</div>
+
+<button class="mic" onclick="listen()">
+🎙 GAPIRISH
+</button>
+
 <div class="controls">
-<input id="message" placeholder="Buyruq bering...">
+<input id="message" placeholder="Buyruq bering..."
+onkeydown="if(event.key==='Enter')send()">
 <button class="send" onclick="send()">Yuborish</button>
 </div>
-<div id="answer">Assalomu alaykum! Men JARVIS. Sizni tinglashga tayyorman.</div>
-<div class="small">PERSONAL AI ASSISTANT · VERSION 1.0</div>
+
+<div id="answer">
+Assalomu alaykum! Men JARVIS. Sizni tinglashga tayyorman.
 </div>
+
+<div class="memory" id="memory">
+Xotira: faol
+</div>
+
+<div class="info">
+JARVIS AI · VERSION 2.0<br>
+OFFLINE COMMAND SYSTEM
+</div>
+
+</div>
+
 <script>
 const answer=document.getElementById("answer");
 const statusText=document.getElementById("status");
+const orb=document.getElementById("orb");
+const message=document.getElementById("message");
+
+let memory=JSON.parse(localStorage.getItem("jarvis_memory")"[]");
+
+function updateMemory(){
+ document.getElementById("memory").textContent=
+ "Xotirada "+memory.length+" ta yozuv mavjud.";
+}
+
+function remember(value){
+ memory.push({
+  text:value,
+  date:new Date().toISOString()
+ });
+ localStorage.setItem("jarvis_memory",JSON.stringify(memory));
+ updateMemory();
+}
 
 function speak(text){
- if(!("speechSynthesis" in window)) return;
+ if(!("speechSynthesis" in window))return;
  speechSynthesis.cancel();
+
  let voice=new SpeechSynthesisUtterance(text);
  voice.lang="uz-UZ";
- voice.rate=1;
+ voice.rate=0.95;
+ voice.pitch=1;
+
  speechSynthesis.speak(voice);
 }
 
@@ -69,46 +121,134 @@ function reply(text){
  speak(text);
 }
 
-function send(){
- let text=document.getElementById("message").value.trim();
- if(!text)return;
- document.getElementById("message").value="";
- let q=text.toLowerCase();
- if(q.includes("salom")) reply("Va alaykum assalom! Men JARVIS. Sizga qanday yordam beray?");
- else if(q.includes("isming")) reply("Mening ismim JARVIS. Shaxsiy sun'iy intellekt yordamchingizman.");
- else if(q.includes("vaqt")) reply("Telefoningizdagi vaqt: "+new Date().toLocaleTimeString("uz-UZ"));
- else if(q.includes("sana")) reply("Bugungi sana: "+new Date().toLocaleDateString("uz-UZ"));
- else if(q.includes("to'xta")||q.includes("stop")){
- speechSynthesis.cancel();
- answer.textContent="Ovozli javob to'xtatildi.";
+function stop(){
+ if("speechSynthesis" in window){
+  speechSynthesis.cancel();
  }
- else reply("Buyrug'ingiz qabul qilindi: "+text+". Hozircha men sinov rejimidaman.");
+ statusText.textContent="SYSTEM ONLINE";
+ orb.classList.remove("active");
+}
+
+function processCommand(text){
+ let q=text.toLowerCase().trim();
+
+ if(!q)return;
+
+ if(q.includes("jarvis")){
+  q=q.replace(/jarvis/g,"").trim();
+ }
+
+ if(q.includes("salom")){
+  reply("Va alaykum assalom! Sizni eshitib turibman.");
+ }
+
+ else if(q.includes("isming")){
+  reply("Mening ismim JARVIS. Men sizning shaxsiy yordamchingizman.");
+ }
+
+ else if(q.includes("vaqt")){
+  reply("Hozirgi vaqt: "+
+   new Date().toLocaleTimeString("uz-UZ"));
+ }
+
+ else if(q.includes("sana")  q.includes("bugun")){
+  reply("Bugungi sana: "+
+   new Date().toLocaleDateString("uz-UZ"));
+ }
+
+ else if(q.includes("yordam")){
+  reply("Men vaqtni aytishim, sanani ko‘rsatishim, eslatma saqlashim va oddiy buyruqlarni bajarishim mumkin.");
+ }
+
+ else if(q.startsWith("eslab qol")){
+  let value=text.substring("eslab qol".length).trim();
+  if(value){
+   remember(value);
+   reply("Ma'lumot xotiramga saqlandi.");
+  }else{
+   reply("Nimani eslab qolishim kerak?");
+  }
+ }
+
+ else if(q.includes("xotiram")){
+  if(memory.length){
+   reply("Xotiramda "+memory.length+" ta yozuv mavjud. Oxirgi yozuv: "+memory[memory.length-1].text);
+  }else{
+   reply("Hozircha xotiram bo‘sh.");
+  }
+ }
+
+ else if(q.includes("to‘xta")  q.includes("to'xta")  q.includes("jim")){
+  stop();
+  answer.textContent="Ovozli javob to‘xtatildi.";
+ }
+
+ else if(q.includes("xotirani tozala")){
+  memory=[];
+  localStorage.setItem("jarvis_memory","[]");
+  updateMemory();
+  reply("Xotira tozalandi.");
+ }
+
+ else{
+  reply("Bu buyruq hali mening oflayn buyruqlarim orasida yo‘q. Internet orqali AI ulanishi keyingi bosqichda qo‘shiladi.");
+ }
+}
+
+function send(){
+ let text=message.value.trim();
+ if(!text)return;
+
+ message.value="";
+ processCommand(text);
 }
 
 function listen(){
- const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ const Recognition=window.SpeechRecognition||
+                   window.webkitSpeechRecognition;
+
  if(!Recognition){
- reply("Bu brauzerda ovozni tanish funksiyasi mavjud emas. Matn orqali buyruq bering.");
- return;
+  reply("Ushbu Safari versiyasida ovozni tanish funksiyasi mavjud emas. Hozircha klaviaturadagi mikrofon orqali matn kiriting.");
+  return;
  }
- const rec=new Recognition();
- rec.lang="uz-UZ";
- rec.interimResults=false;
- statusText.textContent="TINGLAYAPMAN...";
- rec.onresult=e=>{
- document.getElementById("message").value=e.results[0][0].transcript;
- statusText.textContent="SYSTEM ONLINE";
- send();
- };
- rec.onerror=()=>{
- statusText.textContent="QAYTA URINIB KO'RING";
- };
- rec.onend=()=>{
- if(statusText.textContent==="TINGLAYAPMAN...")
- statusText.textContent="SYSTEM ONLINE";
- };
- rec.start();
+
+ try{
+  const rec=new Recognition();
+  rec.lang="uz-UZ";
+  rec.interimResults=false;
+  rec.continuous=false;
+
+  statusText.textContent="TINGLAYAPMAN...";
+  orb.classList.add("active");
+
+  rec.onresult=function(e){
+   let text=e.results[0][0].transcript;
+   statusText.textContent="BUYRUQ QABUL QILINDI";
+   processCommand(text);
+  };
+
+  rec.onerror=function(e){
+   statusText.textContent="OVOZ TANISH XATOSI";
+   answer.textContent="Ovoz tanilmadi: "+e.error+
+    ". Matn orqali buyruq berishingiz mumkin.";
+  };
+
+  rec.onend=function(){
+   orb.classList.remove("active");
+   if(statusText.textContent==="TINGLAYAPMAN..."){
+    statusText.textContent="SYSTEM ONLINE";
+   }
+  };
+
+  rec.start();
+
+ }catch(e){
+  statusText.textContent="MIKROFON XATOSI";
+  answer.textContent="Mikrofonni ishga tushirib bo‘lmadi.";
+ }
 }
+
+updateMemory();
 </script>
 </body>
 </html>
